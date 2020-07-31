@@ -1,17 +1,17 @@
 import numpy as np
-import cPickle
+import _pickle as cPickle
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
-import tensorflow as tf
 import cv2
 import random
+import tensorflow as tf
 
 from utilities import label_img_to_color
 
 from model import ENet_model
 
-project_dir = "/root/segmentation/"
+project_dir = "/home/pikl/segmentation/"
 
 data_dir = project_dir + "data/"
 
@@ -145,17 +145,18 @@ val_loss_per_epoch = []
 # initialize a list containing the 5 best val losses (is used to tell when to
 # save a model checkpoint):
 best_epoch_losses = [1000, 1000, 1000, 1000, 1000]
-
+print("Num GPUs Available: ", len(tf.config.experimental.list_physical_devices('GPU')))
+tf.debugging.set_log_device_placement(True)
 with tf.Session() as sess:
     # initialize all variables/parameters:
     init = tf.global_variables_initializer()
     sess.run(init)
 
     for epoch in range(no_of_epochs):
-        print "###########################"
-        print "######## NEW EPOCH ########"
-        print "###########################"
-        print "epoch: %d/%d" % (epoch+1, no_of_epochs)
+        print ("###########################")
+        print ("######## NEW EPOCH ########")
+        print ("###########################")
+        print ("epoch: %d/%d" % (epoch+1, no_of_epochs))
 
         # run an epoch and get all batch losses:
         batch_losses = []
@@ -172,7 +173,7 @@ with tf.Session() as sess:
                         feed_dict=batch_feed_dict)
             batch_losses.append(batch_loss)
 
-            print "step: %d/%d, training batch loss: %g" % (step+1, no_of_batches, batch_loss)
+            print ("step: %d/%d, training batch loss: %g" % (step+1, no_of_batches, batch_loss))
 
         # compute the train epoch loss:
         train_epoch_loss = np.mean(batch_losses)
@@ -181,7 +182,7 @@ with tf.Session() as sess:
         # save the train epoch losses to disk:
         cPickle.dump(train_loss_per_epoch, open("%strain_loss_per_epoch.pkl"
                     % model.model_dir, "w"))
-        print "training loss: %g" % train_epoch_loss
+        print ("training loss: %g" % train_epoch_loss)
 
         # run the model on the validation data:
         val_loss = evaluate_on_val()
@@ -191,14 +192,14 @@ with tf.Session() as sess:
         # save the val epoch losses to disk:
         cPickle.dump(val_loss_per_epoch, open("%sval_loss_per_epoch.pkl"\
                     % model.model_dir, "w"))
-        print "validation loss: %g" % val_loss
+        print ("validation loss: %g" % val_loss)
 
         if val_loss < max(best_epoch_losses): # (if top 5 performance on val:)
             # save the model weights to disk:
             checkpoint_path = (model.checkpoints_dir + "model_" +
                         model.model_id + "_epoch_" + str(epoch + 1) + ".ckpt")
             saver.save(sess, checkpoint_path)
-            print "checkpoint saved in file: %s" % checkpoint_path
+            print ("checkpoint saved in file: %s" % checkpoint_path)
 
             # update the top 5 val losses:
             index = best_epoch_losses.index(max(best_epoch_losses))
